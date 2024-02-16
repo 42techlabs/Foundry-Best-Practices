@@ -1,0 +1,3 @@
+[submodule "liquidity_prices_attack/lib/forge-std"]
+	path = liquidity_prices_attack/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std

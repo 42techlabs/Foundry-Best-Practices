@@ -137,36 +137,41 @@ Search `veldrome optimism router` in Google and open the contract [link](https:/
   - Get Stable pair address 
     ![stable_pair](images/stable_pair.png)
     ![stable_pair_addrss](images/stable_pair1.png)
+
     Stable Pair Address: 0xBf205335De602ac38244F112d712ab04CB59A498
+
   - Get Volatile pair address
     
     `stable (false)`
+
     ![](images/volatile_pair.png)
+
     Volatile Pair Address: 0xc6C1E8399C1c33a3f1959f2f77349D74a373345c
 
   - Get Velodrome Finance:Router Address
     
     ![Router](images/router.png)
+
     Velodrome Router: 0x9c12939390052919aF3155f41Bf4160Fd3666A6f
 
-```
-    pragma solidity ^0.8.13;
+    ```
+        pragma solidity ^0.8.13;
 
-    import "forge-std/Test.sol";
-    import "../src/VerodromeOracle.sol";
+        import "forge-std/Test.sol";
+        import "../src/VerodromeOracle.sol";
 
-    contract VeloOracleTest is Test {
-        VelodromeOracle public oracle;
+        contract VeloOracleTest is Test {
+            VelodromeOracle public oracle;
 
-        // WETH Address: 0x4200000000000000000000000000000000000006
-        // wstETH Address: 0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb
-        // Stable Pair Address: 0xBf205335De602ac38244F112d712ab04CB59A498
-        // Volatile Pair Address: 0xc6C1E8399C1c33a3f1959f2f77349D74a373345c
-        // Velodrome Router: 0x9c12939390052919aF3155f41Bf4160Fd3666A6f
-    
-    }
-```
-### Write setUp function
+            // WETH Address: 0x4200000000000000000000000000000000000006
+            // wstETH Address: 0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb
+            // Stable Pair Address: 0xBf205335De602ac38244F112d712ab04CB59A498
+            // Volatile Pair Address: 0xc6C1E8399C1c33a3f1959f2f77349D74a373345c
+            // Velodrome Router: 0x9c12939390052919aF3155f41Bf4160Fd3666A6f
+        
+        }
+    ```
+### Write SetUp Function
 
 ```solidity
     function setUp() public {
@@ -178,11 +183,17 @@ Search `veldrome optimism router` in Google and open the contract [link](https:/
 
 We plan to simulate the attack in four steps.
 
+```solidity
+    function testAttack() public {
+
+    }
+```
+
 #### 1. Check initial Price
 Set stable pair liquidity pool address using `0xBf205335De602ac38244F112d712ab04CB59A498`
 
 ```
-    STABLE_PAIR = address(0xBf205335De602ac38244F112d712ab04CB59A498);
+    address constant STABLE_PAIR = 0xBf205335De602ac38244F112d712ab04CB59A498;
 ```
 
 Using `get_lp_price` to fetch the initial price of the LP token from the `oracle` in the `STABLE_PAIR` liquidity pool.
@@ -191,32 +202,65 @@ There are two parameters in `get_lp_price(address lp_token, uint256[] memory pri
 - Using `STABLE_PAIR` for the first parmeter.
 - Initializing an arry with fixed values(1e18) for the second parmeter.
 
+```solidity
+        uint256[] memory prices = new uint256[](2); // for get_lp_price's second parameter: @param prices The prices of the underlying in the liquidity pool
+        prices[0] = 1e18;
+        prices[1] = 1e18;
+        // Attack Pattern
+        // 1. Check initial Price
+        uint256 initialPrice = oracle.get_lp_price(STABLE_PAIR,prices);
+```
+
+#### First Build and Fork Tests
+Frist, build and debug tests.
+
+```bash
+  forge build
+  forge test
+```
+
+Due to the need to fetch the latest prices from the Optimism Mainnet, using `forge test` results in a `FAIL`. Thus, Fork Tests are needed. Using the following command.
+
+```bash
+   forge test --rpc-url https://opt-mainnet.g.alchemy.com/v2/YOUR_OPTIMISM_MAINNET_API
+```
+
+You can get an Optimism Mainnet fork URL from [Alchemy](https://www.alchemy.com/).
+
 
 #### 2. Check a reserve
 
+The reserve of a liquidity pool refer to the quantity of each token in the pool. Reserve can usually be accessed directly through contract functions `getReserves`.
+
+However, there is a trick way using `WETH.balanceOf(STABLE_PAIR)` to obtain the balance of `WETH` tokens in the `STABLE_PAIR` liquidity pool as an approximate way to estimate the pool's reserves
+
+```solidity
+        // 2. Check a reserve
+        // Trick, just get balance of LP token, since it's so manipulated yet
+        uint256 initialBalanceOfWETH = WETH.balanceOf(STABLE_PAIR);
+```
 
 #### 3. Do a Massive Swap
 
+deal
 
+Attacker
 
+prank
+approve
+IRouter
+find Swap function
+struct router
+swap
 #### 4. Verify if Price Changes
 
 
-```
-    function testAttack(){
-        // Attack Pattern
-        // 1. Check initial Price
 
-        // 2. Check a reserve
-        // Trick, just get balance of LP token, since it's so mainpulated yet
+## Tricks
 
-        // 3. Do a Massive Swap
+- Using balance of LP token to approximate the pool's reserves
 
-        // 4. Verify if Price Changes
-    }
-```
-
-
+- Use [Solidity by Example](https://solidity-by-example.org/) to assist in writing test code 
 
 //TODO
 ```Solidity

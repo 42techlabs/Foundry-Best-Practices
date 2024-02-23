@@ -241,17 +241,81 @@ However, there is a trick way using `WETH.balanceOf(STABLE_PAIR)` to obtain the 
 ```
 
 #### 3. Do a Massive Swap
+1. Create a mock address used to simulate an attacker
+   ```solidity
+       address constant ATTACKER = address(Oxbad);
+   ```
+2. Using `deal()` to driectly assign a token balance to a specific account.
+   ```solidity
+      deal(address(WETH), address(ATTACKER), initialBalanceOfWETH); // Assign a specified amount of WETH tokens (`intialBalanceOfWETH` to the ATTACKER account.)
+   ```
+3. Using `startPrank()` set the sender(`msg.sender`) of the test environment, unitl `vm.stopPrank()` is called.
+   ```solidity
+       vm.startPrank(ATTACKER);
+   ```
+4. Approve transfer
+   ```solidity
+       WETH.approve(STABLE_PAIR, initialBalanceOfWETH); // Authorizing the `STABLE_PAIR` contract to transfer up to an `initialBalanceOfWETH` amount of WETH tokens from the `ATTACKER` account.
+   ```
+5. Calling the Swap function on the Velodrome Finance: Router,so create the interface IRouter in your test file.
+   
+   create interface `IRouter` and constant of `IRouter`, finding the [address](https://optimistic.etherscan.io/address/0x9c12939390052919af3155f41bf4160fd3666a6f#readContract) of Velodrome Finance: Router.
 
-deal
+   ```
+       interface IRouter{
 
-Attacker
+       }
+       
+       contract VeloOracleTest is Test {
+       ......
+           address constant ATTACKER = address(0xbad); // a mock address used to simulate an attacker
 
-prank
-approve
-IRouter
-find Swap function
-struct router
-swap
+           IRouter constant VELO_ROUTER = IRouter(0x9c12939390052919aF3155f41Bf4160Fd3666A6f); // the address of a router contract that handles swapping tokens
+       }
+   ```
+6. Find Swap function and add it into interface IRouter
+   
+   Finding the accurate swap function from [Velodrome Finance: Router](https://optimistic.etherscan.io/address/0x9c12939390052919af3155f41bf4160fd3666a6f#writeContract) in Optimistic.
+   
+   Contract -> Write Contract Section -> `swapExactTokensForTokens`
+   ![swap function](images/swap_function.png)
+   
+   In Code Section, search `swapExactTokensForTokens` code and only copy function definition to the interface.
+   ![swapExactTokensForTokens](images/swap_function_interface.jpg)
+
+   ```solidity
+      interface IRouter {          
+          function swapExactTokensForTokens(
+              uint amountIn,
+              uint amountOutMin,
+              route[] calldata routes,
+              address to,
+              uint deadline
+          ) external;
+      }
+   ```
+
+   Add other necessary code, `struct route{...}` to your interface
+
+   ```solidity
+      interface IRouter {
+          struct route {
+              address from;
+              address to;
+              bool stable;
+          }          
+          function swapExactTokensForTokens(
+              uint amountIn,
+              uint amountOutMin,
+              route[] calldata routes,
+              address to,
+              uint deadline
+          ) external;
+      }
+   ```
+7. Using `swapExactTokensForTokens` in your test file.
+   ```solidity
+   ```
 #### 4. Verify if Price Changes
 
 

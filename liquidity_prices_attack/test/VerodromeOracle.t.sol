@@ -36,7 +36,7 @@ contract VeloOracleTest is Test {
 
     address constant ATTACKER = address(0xbad); // a mock address used to simulate an attacker
 
-    IRouter constant VELO_ROUTER = IRouter(0x9c12939390052919aF3155f41Bf4160Fd3666A6f); // the address of a router contract tha
+    IRouter constant VELO_ROUTER = IRouter(0x9c12939390052919aF3155f41Bf4160Fd3666A6f); // the address of a router contract that handles swapping tokens
 
 
     function setUp() public {
@@ -59,8 +59,12 @@ contract VeloOracleTest is Test {
         // Trick, just get balance of LP token, since it's so manipulated yet
         uint256 initialBalanceOfWETH = WETH.balanceOf(STABLE_PAIR);
 
+        vm.startPrank(ATTACKER); // Set the test environment, it sets the `ATTACKER` address as the active sender (`msg.sender`) for all following transactions and calls within that test, until `vm.stopPrank()` is called.
+
         // 3. Do a Massive Swap
-        deal()
+        deal(address(WETH), address(ATTACKER), initialBalanceOfWETH); // Assign a specified amount of WETH tokens (`intialBalanceOfWETH` to the ATTACKER account.)
+        WETH.approve(STABLE_PAIR, initialBalanceOfWETH); // Authorizing the `STABLE_PAIR` contract to transfer up to an `initialBalanceOfWETH` amount of WETH tokens from the `ATTACKER` account.
+
 
         // 4. Verify if Price Changes
     }

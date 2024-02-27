@@ -16,3 +16,11 @@ Stay tuned for updates and new test cases. Happy coding!
 ## Liquidity Prices Attack
 
 - [Liquidity Prices Attack](https://github.com/42techlabs/Foundry-Best-Practices/tree/main/liquidity_prices_attack)
+  - Liquidity Pool Price Attack Simulation
+  - Price Verification: Comparing Liquidity Pool prices before and after swaps
+  - Fuzz Testing
+  - Exception Handling: Captureing and dealing with potential exceptions during the swap process using `try-catch` statements.
+  - Reuse source code: contract -> interface, IERC20 lib -> OpenZeppelin,
+  - `console2.log`, `vm.startPrank`, `vm.stopPrank`, `deal`.
+  - `--rpc-url`
+  - Alchemy API

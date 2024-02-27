@@ -87,7 +87,51 @@ contract VeloOracleTest is Test {
         uint256 newPrice =  oracle.get_lp_price(STABLE_PAIR,prices);
         console2.log("newPrice: ", newPrice);
         assertEq(initialBalanceOfWETH, newPrice, "Different");
+    }
 
+    // Fuzz Testing
+    function testAttackFuzz(uint128 randomAmount) public {
+        uint256[] memory prices = new uint256[](2); 
+        prices[0] = 1e18;
+        prices[1] = 1e18;
+        // Attack Pattern
+        // 1. Check initial Price
+        uint256 initialPrice = oracle.get_lp_price(STABLE_PAIR,prices);
+        console2.log("initialPrice: ", initialPrice);
+        // 2. Check a reserve
+        // Trick, just get balance of LP token, since it's so manipulated yet
+        uint256 initialBalanceOfWETH = WETH.balanceOf(STABLE_PAIR);
 
+        vm.startPrank(ATTACKER); 
+        // 3. Do a Massive Swap
+        deal(address(WETH), address(ATTACKER), randomAmount); 
+        WETH.approve(address(VELO_ROUTER), randomAmount); 
+
+        /**
+        struct route {
+            address from;
+            address to;
+            bool stable;
+        }
+        */
+        IRouter.route[] memory r = new IRouter.route[](1);
+        IRouter.route memory the_route = IRouter.route({
+            from: address(WETH),
+            to: address(WSTETH),
+            stable: true
+        });
+
+        r[0] = the_route;
+        try VELO_ROUTER.swapExactTokensForTokens(randomAmount, 1, r, address(ATTACKER), block.timestamp) {
+            // 4. Verify if Price Changes
+            uint256 newPrice =  oracle.get_lp_price(STABLE_PAIR,prices);
+            console2.log("newPrice: ", newPrice);
+            assertEq(initialPrice, newPrice, "Different");
+        } catch {
+            // Swap Failed
+            console2.log("Swap failed, possibly due to INSUFFICIENT_OUTPUT_AMOUNT");
+        }
+
+        vm.stopPrank();
     }
 }

@@ -371,10 +371,12 @@ However, there is a trick way using `WETH.balanceOf(STABLE_PAIR)` to obtain the 
                assertEq(initialBalanceOfWETH, newPrice, "Different");
 
    ```
-##### 5. Test Result
+#### 5. Test Result
 The test results indicate a significant change in the liquidity pool price reported by the `VelodromeOracle` contract after simulating an attack, with the initial price at approximately `1.834e18` and the new price dropping to about `0.992e18` post-attack. This discrepancy highlights a potential vulnerability in the contract's price feedback mechanism, especially under extreme market conditions or manipulative actions.
 
 ![result](images/result.png)
+
+### 6. Fuzz Testing
 
 
 ## Tips

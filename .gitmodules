@@ -7,3 +7,6 @@
 [submodule "excessive_refund_attack/lib/forge-std"]
 	path = excessive_refund_attack/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+[submodule "solidity_yul_test/lib/forge-std"]
+	path = solidity_yul_test/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
